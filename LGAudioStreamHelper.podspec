@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
     s.name = 'LGAudioStreamHelper'
-    s.version = '1.0.0'
+    s.version = '1.0.1'
     s.platform = :ios, '6.0'
     s.license = 'MIT'
     s.homepage = 'https://github.com/Friend-LGA/LGAudioStreamHelper'
@@ -12,17 +12,6 @@ Pod::Spec.new do |s|
     s.requires_arc = true
 
     s.source_files = 'LGAudioStreamHelper/*.{h,m}'
-
-    s.subspec 'LGAudioStreamContentTypeGetter' do |ss|
-        ss.source_files = 'LGAudioStreamHelper/LGAudioStreamContentTypeGetter/*.{h,m}'
-    end
-
-    s.subspec 'LGAudioStreamMetadataGetter' do |ss|
-        ss.source_files = 'LGAudioStreamHelper/LGAudioStreamMetadataGetter/*.{h,m}'
-    end
-
-    s.subspec 'LGAudioStreamRecorder' do |ss|
-        ss.source_files = 'LGAudioStreamHelper/LGAudioStreamRecorder/*.{h,m}'
-    end
+    s.source_files = 'LGAudioStreamHelper/**/*.{h,m}'
 
 end

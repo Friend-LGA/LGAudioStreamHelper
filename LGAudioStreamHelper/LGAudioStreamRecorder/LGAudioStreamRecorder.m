@@ -73,22 +73,22 @@ LGAudioStreamRecorderResponceType;
     if (!self.isRecording)
     {
         _recording = YES;
-        
+
         dispatch_async(_selfQueue, ^(void)
                        {
                            [self clear];
-                           
+
                            if (_errorHandler) _errorHandler = nil;
-                           
+
                            _errorHandler = errorHandler;
-                           
+
                            _streamURL = streamUrl;
                            _localURL = localUrl;
-                           
+
                            NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_streamURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10];
                            [request setHTTPMethod:@"GET"];
                            [request setValue:@"0" forHTTPHeaderField:@"Icy-MetaData"];
-                           
+
                            dispatch_async(dispatch_get_main_queue(), ^(void)
                                           {
                                               _connection = [NSURLConnection connectionWithRequest:request delegate:self];
@@ -103,7 +103,7 @@ LGAudioStreamRecorderResponceType;
     if (self.isRecording)
     {
         _recording = NO;
-        
+
         dispatch_async(_selfQueue, ^(void)
                        {
                            dispatch_async(dispatch_get_main_queue(), ^(void)
@@ -111,15 +111,15 @@ LGAudioStreamRecorderResponceType;
                                               [_connection cancel];
                                               _connection = nil;
                                           });
-                           
+
                            if (_fileExtension)
                            {
                                _localURL = [_localURL URLByDeletingPathExtension];
                                _localURL = [_localURL URLByAppendingPathExtension:_fileExtension];
-                               
+
                                if (_streamData) [_streamData writeToURL:_localURL atomically:YES];
                            }
-                           
+
                            [self clear];
                        });
     }
@@ -170,19 +170,19 @@ LGAudioStreamRecorderResponceType;
 {
     //_recording = NO;
     _parsed = NO;
-    
+
     if (_connection)
     {
         [_connection cancel];
         _connection = nil;
     }
-    
+
     if (_streamData) _streamData = nil;
     if (_contentType) _contentType = nil;
     if (_fileExtension) _fileExtension = nil;
     if (_streamURL) _streamURL = nil;
     if (_localURL) _localURL = nil;
-    
+
     _responceType = 0;
 }
 
@@ -191,13 +191,13 @@ LGAudioStreamRecorderResponceType;
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSHTTPURLResponse *)response
 {
     _streamData = [NSMutableData new];
-    
+
     NSString *contentType = response.allHeaderFields[@"content-type"];
-    
+
     if (contentType && contentType.length > 0)
     {
         _responceType = LGAudioStreamRecorderResponceTypeHTTP;
-        
+
         [self identifyFileExtensionForContentType:contentType];
     }
     else _responceType = LGAudioStreamRecorderResponceTypeICY;
@@ -206,9 +206,9 @@ LGAudioStreamRecorderResponceType;
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
 {
     _recording = NO;
-    
+
     [self clear];
-    
+
     if (_errorHandler) _errorHandler(error);
 }
 
@@ -217,56 +217,56 @@ LGAudioStreamRecorderResponceType;
     dispatch_async(_selfQueue, ^(void)
                    {
                        [_streamData appendData:data];
-                       
+
                        if (_responceType == LGAudioStreamRecorderResponceTypeICY && !self.isParsed && _streamData.length >= 200)
                        {
                            _parsed = YES;
-                           
+
                            NSData *metaData = [_streamData subdataWithRange:NSMakeRange(0, 10)];
                            NSString *string = [NSString stringWithUTF8String:metaData.bytes];
-                           
+
                            if ([string caseInsensitiveCompare:@"ICY 200 OK"] == NSOrderedSame)
                            {
                                NSMutableString *header = [NSMutableString new];
-                               
+
                                for (int i=0; ; i++)
                                {
                                    NSData *metaData1 = [_streamData subdataWithRange:NSMakeRange(10+i, 1)];
                                    NSString *string1 = [NSString stringWithUTF8String:metaData1.bytes];
-                                   
+
                                    if (string1) [header appendString:string1];
-                                   
+
                                    if (header.length >= 4 && [[header substringFromIndex:header.length-4] isEqualToString:@"\r\n\r\n"]) break;
                                }
-                               
+
                                [header replaceOccurrencesOfString:@"\r\n\r\n" withString:@"" options:0 range:NSMakeRange(0, header.length)];
-                               
+
                                NSArray *array = [header componentsSeparatedByString:@"\r\n"];
-                               
+
                                NSMutableDictionary *metadataDictionary = [NSMutableDictionary new];
-                               
+
                                for (NSString *string in array)
                                {
                                    NSArray *array = [string componentsSeparatedByString:@":"];
-                                   
+
                                    if (array.count > 1)
                                    {
                                        NSString *string1 = [array objectAtIndex:0];
                                        NSMutableString *string2 = [NSMutableString new];
-                                       
+
                                        for (int i=1; i<array.count; i++)
                                        {
                                            if (i > 1) [string2 appendString:@":"];
-                                           
+
                                            [string2 appendString:[array objectAtIndex:i]];
                                        }
-                                       
+
                                        [metadataDictionary setObject:string2 forKey:string1];
                                    }
                                }
-                               
+
                                NSString *contentType = metadataDictionary[@"content-type"];
-                               
+
                                [self identifyFileExtensionForContentType:contentType];
                            }
                        }
